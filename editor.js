@@ -1,10 +1,12 @@
 const fs = require("fs");
+const { execSync, exec } = require('child_process');
 
-const path = process.argv[2];
+const gamePath = process.argv[2].replace(/[\\/]$/, "");
 
-fs.copyFileSync(path + "/Sensory Overload Playtest.pck", "./bin/game.pck");
+if (!fs.existsSync("./bin")) fs.mkdirSync("./bin");
 
-const { execSync } = require('child_process');
+console.log("Locating Game");
+fs.copyFileSync(gamePath + "/Sensory Overload Playtest.pck", "./bin/game.pck");
 
 function getEncryptionKey(exe) {
     try {
@@ -27,15 +29,21 @@ function getEncryptionKey(exe) {
 }
 
 console.log("Finding Key")
-const key = getEncryptionKey(path + "/Sensory Overload Playtest.exe")
+const key = getEncryptionKey(gamePath + "/Sensory Overload Playtest.exe")
 
 console.log("Extracting Game");
 execSync(`cd ./bin && gdre_tools.exe --headless --recover=./game.pck --output=../project --key=${key}`, { shell: true });
+fs.mkdirSync("./project/mod")
 
-//do the modding
-
+console.log("Restoring Progress");
 try {execSync("robocopy ./mod ./project /E")} catch {}
 
-//execute
 
-execSync(`cd ./bin && godot_engine.exe --path "../project" "res://scenes/main.tscn"`);
+console.log("Opening Editor");
+execSync(`cd ./bin && godot_engine.exe --path "../project" -e`, { shell: true });
+
+try {execSync("robocopy ./project/mod ./mod /E")} catch {}
+
+console.log("Cleaning up work");
+fs.rmSync("./project", { recursive: true, force: true });
+fs.rmSync("./original", { recursive: true, force: true });

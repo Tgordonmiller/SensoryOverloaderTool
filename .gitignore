@@ -1,1 +1,4 @@
 bin/godot_engine.exe
+bin/game.pck
+project/*
+original/*
